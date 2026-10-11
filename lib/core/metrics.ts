@@ -1,7 +1,7 @@
 // Dashboard metrics. Pure functions over jobs and applications, so the
 // same numbers can come from Supabase (or a SQL view) later.
 import { attendanceRate, averageStars, parseISODate, shiftHours, toISODate } from "./logic";
-import { ME } from "./mock";
+import { ME } from "./ids";
 import type { Application, Job, Role } from "./types";
 
 export interface MonthPoint {

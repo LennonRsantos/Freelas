@@ -11,7 +11,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { confirmedCount, formatDateParts, toISODate } from "@/lib/core/logic";
 import { FEATURES } from "@/lib/core/features";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import { useFreelas } from "@/lib/store/freelas-store";
 
 export default function ContratarPage() {

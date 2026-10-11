@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StarRow } from "@/components/ui/stars";
 import { averageStars, canCheckIn, parseISODate, toISODate } from "@/lib/core/logic";
 import { FEATURES } from "@/lib/core/features";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import type { Application, Job, Review } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { cn } from "@/lib/utils";

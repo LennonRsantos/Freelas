@@ -23,7 +23,7 @@ import {
   type DateFilter,
   type JobFilters,
 } from "@/lib/core/logic";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import type { Job, Role } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 

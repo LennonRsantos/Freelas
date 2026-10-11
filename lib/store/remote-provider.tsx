@@ -11,13 +11,14 @@ import {
   type ReactNode,
 } from "react";
 import { fetchSnapshot, runAction } from "../data/remote";
-import { ME } from "../core/mock";
+import { ME } from "../core/ids";
 import type { Contractor, Job, ViewMode } from "../core/types";
 import { getSupabase } from "../supabase/client";
 import { Splash, StoreContext, useToasts, type Store } from "./context";
 import { reducer, type Action, type State } from "./reducer";
 
 const MODE_KEY = "freelas:mode";
+const DEMO_KEYS = ["freelas:v4", "freelass:v4", "freelass:v3", "freelass:v2", "freelass:v1"];
 
 type Internal = Action | { type: "__replace"; state: State };
 
@@ -55,6 +56,13 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     modeRef.current = state.mode;
   }, [state.mode]);
+
+  // Made-up data from an earlier demo session must not linger on this device.
+  useEffect(() => {
+    try {
+      for (const key of DEMO_KEYS) localStorage.removeItem(key);
+    } catch {}
+  }, []);
 
   // Session: restored on load and kept in sync with sign-in / sign-out.
   // Signing in from /entrar must not swap the page for the splash.

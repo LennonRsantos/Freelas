@@ -12,7 +12,7 @@ npm run dev        # http://localhost:3000
 npm run build && npm start   # produção (o service worker só registra em produção)
 ```
 
-Sem `.env.local`, o app roda em **modo demonstração**, com dados de exemplo salvos no navegador. Com as chaves do Supabase, usa o banco de verdade (veja abaixo).
+Com as chaves do Supabase no `.env.local`, o app usa o banco de verdade, sem nenhum dado de exemplo (veja abaixo). Sem as chaves, mostra uma tela pedindo configuração. Para ver a **demonstração** com vagas, pessoas e avaliações inventadas (salvas só no navegador), rode sem as chaves do Supabase e com `NEXT_PUBLIC_DEMO=true`.
 
 ## Supabase
 

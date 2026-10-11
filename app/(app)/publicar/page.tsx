@@ -19,7 +19,7 @@ import {
 } from "@/components/address-fields";
 import { addDays, toISODate } from "@/lib/core/logic";
 import { approximateCoords } from "@/lib/core/places";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import type { Job, Role } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 

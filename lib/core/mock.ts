@@ -3,7 +3,9 @@
 import { addDays, toISODate } from "./logic";
 import type { Address, Application, Contractor, FreelancerCard, Job } from "./types";
 
-export const ME = "me";
+import { ME } from "./ids";
+
+export { ME };
 
 export const CONTRACTORS: Contractor[] = [
   { id: "c1", name: "Buffet Villa Jardim", rating: 4.8, ratingCount: 132 },

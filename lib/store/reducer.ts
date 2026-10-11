@@ -1,7 +1,7 @@
 // State + reducer with no React import, so it can run unchanged
 // in React Native (useReducer) or be swapped for Supabase calls.
 import { confirmedCount, uid } from "../core/logic";
-import { ME } from "../core/mock";
+import { ME } from "../core/ids";
 import type {
   Application,
   Contractor,

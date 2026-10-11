@@ -12,7 +12,7 @@ import { Button, buttonStyles } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { StarRating } from "@/components/ui/stars";
 import { attendanceRate, averageStars, formatAddress } from "@/lib/core/logic";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import type { ViewMode } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 

@@ -3,7 +3,7 @@
 // The signed-in user's id is mapped to ME, so screens never see UUIDs.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toISODate } from "../core/logic";
-import { ME } from "../core/mock";
+import { ME } from "../core/ids";
 import type {
   Address,
   Application,

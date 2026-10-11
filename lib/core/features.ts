@@ -7,4 +7,10 @@ export const FEATURES = {
    * person at the door can be rejected as "too far").
    */
   checkIn: false,
+  /**
+   * Demo mode with made-up jobs, people and reviews, saved in the browser.
+   * Only when NEXT_PUBLIC_DEMO=true and Supabase is not configured;
+   * never mixed with real data.
+   */
+  demo: process.env.NEXT_PUBLIC_DEMO === "true",
 } as const;

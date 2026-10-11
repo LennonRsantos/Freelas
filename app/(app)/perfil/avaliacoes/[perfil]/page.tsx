@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StarRow } from "@/components/ui/stars";
 import { Tabs } from "@/components/ui/tabs";
 import { averageStars, formatDateParts } from "@/lib/core/logic";
-import { ME } from "@/lib/core/mock";
+import { ME } from "@/lib/core/ids";
 import type { Application, Job, Review, ViewMode } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 
