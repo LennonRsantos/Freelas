@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StarRow } from "@/components/ui/stars";
 import { averageStars, canCheckIn, parseISODate, toISODate } from "@/lib/core/logic";
+import { FEATURES } from "@/lib/core/features";
 import { ME } from "@/lib/core/mock";
 import type { Application, Job, Review } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
@@ -209,7 +210,9 @@ function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucke
 
   function details({ app, job }: (typeof rows)[number]) {
     if (bucket === "proximos") {
-      if (canCheckIn(app, job, today) || app.checkInAt) return <CheckInPanel app={app} job={job} />;
+      if (FEATURES.checkIn && (canCheckIn(app, job, today) || app.checkInAt)) {
+        return <CheckInPanel app={app} job={job} />;
+      }
       if (app.status === "em_analise") {
         return (
           <Button
@@ -229,7 +232,9 @@ function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucke
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-2 text-sm text-muted">
             <CalendarClock className="size-4" aria-hidden />
-            Check-in liberado no dia do turno.
+            {FEATURES.checkIn
+              ? "Check-in liberado no dia do turno."
+              : "Turno confirmado. Chegue no horário combinado."}
           </p>
           <Button
             variant="ghost"

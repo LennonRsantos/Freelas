@@ -22,7 +22,7 @@ Sem `.env.local`, o app roda em **modo demonstração**, com dados de exemplo sa
 4. Em **Authentication → URL Configuration**, coloque o endereço do site em **Site URL**.
 5. O e-mail padrão do Supabase só entrega para membros do projeto e tem limite baixo por hora. Para usuários reais, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**.
 
-Como funciona: as telas leem as tabelas direto; toda mudança (candidatar, aprovar, check-in, finalizar, cancelar, avaliar) passa por funções no banco que conferem quem pede e se é permitido. O check-in é validado no servidor (dia do turno e até 300 m). Candidaturas e vagas chegam em tempo real.
+Como funciona: as telas leem as tabelas direto; toda mudança (candidatar, aprovar, check-in, finalizar, cancelar, avaliar) passa por funções no banco que conferem quem pede e se é permitido. O check-in por GPS está desligado por enquanto (veja abaixo). Candidaturas e vagas chegam em tempo real.
 
 ## Fluxo de teste
 
@@ -30,7 +30,7 @@ Navegação (barra inferior no celular, lateral no desktop):
 
 - **Procurar** (lupa): feed de vagas abertas. Abre na cidade do freelancer; filtre por cidade e bairro (ex.: Joinville, Iririú), função (25 serviços em 4 categorias, com busca que entende sinônimos como "faxina" ou "unha"), data (atalhos ou **Escolher dia** no calendário) e valor mínimo (faixas prontas ou **Outro valor** digitado), e toque em **Me candidatar**.
 - **Serviços**: tudo o que você fez, em **Prestados** (turnos trabalhados) e **Oferecidos** (vagas da sua empresa), com os filtros **Próximos**, **Finalizados** e **Cancelados**.
-  - Próximos: check-in GPS no dia do turno (fora do raio, **Simular chegada ao local (demo)**), retirar candidatura, **Cancelar participação** ou **Cancelar vaga**.
+  - Próximos: retirar candidatura, **Cancelar participação** ou **Cancelar vaga**.
   - Finalizados: nota e comentário recebidos, e **Avaliar** quando ainda falta a sua avaliação.
   - Cancelados: quem cancelou e quando.
 - **Oferecer** (só aparece se você tem empresa cadastrada): candidatos aguardando, turnos de hoje e **Publicar vaga**. Três candidatos simulados chegam alguns segundos depois de publicar, como o Supabase Realtime fará em produção.
@@ -70,5 +70,5 @@ app/manifest.ts + public/sw.js   PWA: instalação e cache offline do app shell
 
 - Trocar o reducer local por chamadas ao Supabase (Auth com magic link, tabelas de `schema.sql`) e assinar `applications` via Realtime.
 - Geocodificar o endereço ao publicar a vaga. Hoje a demo usa o centro aproximado do bairro (tabela em `lib/core/places.ts`, só Joinville).
-- Validar o check-in no servidor (posição e horário) para impedir fraude.
+- **Check-in por GPS (desligado):** o código e a função `check_in` do banco (valida dia do turno e 300 m) estão prontos, mas o app esconde tudo enquanto `FEATURES.checkIn` for `false` em `lib/core/features.ts`. Antes de religar, gerar as coordenadas da vaga a partir do endereço completo (hoje é o centro do bairro) e voltar a exigir `check_in_at` na presença (`freelancer_cards` em `002_funcoes_e_seguranca.sql` e `attendanceRate` em `lib/core/logic.ts`).
 - Upload de fotos para o Supabase Storage. Hoje ficam reduzidas a 256 px no `localStorage`.

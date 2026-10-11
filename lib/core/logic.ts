@@ -1,4 +1,5 @@
 // Pure business rules. No React, no DOM.
+import { FEATURES } from "./features";
 import type {
   Address,
   Application,
@@ -135,6 +136,19 @@ export function confirmedCount(jobId: string, apps: Application[]): number {
 }
 
 /** Freelancer can check in on the day of the shift, once. */
+/**
+ * Presence %: finished shifts over finished + shifts the freelancer called
+ * off. With check-in on, a finished shift counts only if they checked in.
+ */
+export function attendanceRate(apps: Application[]): number | null {
+  const finished = apps.filter((a) => a.status === "concluida");
+  const dropped = apps.filter((a) => a.status === "cancelada" && a.cancelledBy === "freelancer");
+  const total = finished.length + dropped.length;
+  if (total === 0) return null;
+  const showedUp = FEATURES.checkIn ? finished.filter((a) => a.checkInAt).length : finished.length;
+  return Math.round((showedUp / total) * 100);
+}
+
 export function canCheckIn(app: Application, job: Job, today: Date): boolean {
   return app.status === "confirmada" && !app.checkInAt && job.date === toISODate(today);
 }

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { StarRating } from "@/components/ui/stars";
-import { averageStars, formatAddress } from "@/lib/core/logic";
+import { attendanceRate, averageStars, formatAddress } from "@/lib/core/logic";
 import { ME } from "@/lib/core/mock";
 import type { ViewMode } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
@@ -27,9 +27,7 @@ export default function PerfilPage() {
   const myApps = state.applications.filter((a) => a.freelancerId === ME);
   const received = myApps.flatMap((a) => (a.contractorReview ? [a.contractorReview.stars] : []));
   const done = myApps.filter((a) => a.status === "concluida");
-  const attendance = done.length
-    ? Math.round((done.filter((a) => a.checkInAt).length / done.length) * 100)
-    : null;
+  const attendance = attendanceRate(myApps);
   const freelancerPending = done.filter((a) => !a.freelancerReview).length;
 
   const myJobIds = new Set(state.jobs.filter((j) => j.contractorId === ME).map((j) => j.id));

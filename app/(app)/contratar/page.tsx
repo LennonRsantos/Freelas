@@ -10,6 +10,7 @@ import { JobStatusBadge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { confirmedCount, formatDateParts, toISODate } from "@/lib/core/logic";
+import { FEATURES } from "@/lib/core/features";
 import { ME } from "@/lib/core/mock";
 import { useFreelas } from "@/lib/store/freelas-store";
 
@@ -90,8 +91,19 @@ function Dashboard() {
                     }
                   >
                     <p className="text-sm text-ink-soft">
-                      <span className="font-semibold text-ok-ink">{here}</span> de{" "}
-                      {confirmedCount(job.id, state.applications)} confirmados fizeram check-in
+                      {FEATURES.checkIn ? (
+                        <>
+                          <span className="font-semibold text-ok-ink">{here}</span> de{" "}
+                          {confirmedCount(job.id, state.applications)} confirmados fizeram check-in
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-semibold text-ok-ink">
+                            {confirmedCount(job.id, state.applications)}
+                          </span>{" "}
+                          de {job.slots} profissionais confirmados
+                        </>
+                      )}
                     </p>
                   </JobTicket>
                 </li>

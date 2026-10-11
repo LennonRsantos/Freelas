@@ -1,6 +1,6 @@
 // Dashboard metrics. Pure functions over jobs and applications, so the
 // same numbers can come from Supabase (or a SQL view) later.
-import { averageStars, parseISODate, shiftHours, toISODate } from "./logic";
+import { attendanceRate, averageStars, parseISODate, shiftHours, toISODate } from "./logic";
 import { ME } from "./mock";
 import type { Application, Job, Role } from "./types";
 
@@ -129,20 +129,15 @@ export function freelancerMetrics(jobs: Job[], apps: Application[], today: Date)
   const finished = mine.filter((r) => r.app.status === "concluida");
   const todayISO = toISODate(today);
   const upcoming = mine.filter((r) => r.app.status === "confirmada" && r.job.date >= todayISO);
-  const iCancelled = mine.filter(
-    (r) => r.app.status === "cancelada" && r.app.cancelledBy === "freelancer",
-  ).length;
   const received = finished.flatMap((r) =>
     r.app.contractorReview ? [r.app.contractorReview.stars] : [],
   );
-  const showedUp = finished.filter((r) => r.app.checkInAt).length;
-  const committed = finished.length + iCancelled;
 
   return {
     ...summarize(finished, today),
     rating: averageStars(received),
     ratingCount: received.length,
-    rate: committed ? Math.round((showedUp / committed) * 100) : null,
+    rate: attendanceRate(mine.map((r) => r.app)),
     upcomingValue: upcoming.reduce((s, r) => s + r.job.pay, 0),
     upcomingCount: upcoming.length,
     cancelled: mine.filter((r) => r.app.status === "cancelada").length,

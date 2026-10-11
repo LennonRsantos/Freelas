@@ -51,7 +51,9 @@ create or replace view freelancer_cards as
     count(r.id) as rating_count,
     (
       select case when count(*) = 0 then null
-        else round(100.0 * count(*) filter (where a.status = 'concluida' and a.check_in_at is not null) / count(*))
+        -- Presença = turnos concluídos / (concluídos + cancelados pelo freelancer).
+        -- O check-in está desligado no app; quando voltar, exigir check_in_at aqui.
+        else round(100.0 * count(*) filter (where a.status = 'concluida') / count(*))
       end
       from applications a
       where a.freelancer_id = f.user_id

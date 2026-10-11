@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, CheckCircle2, Home, MapPinCheck, X } from "lucide-react";
+import { FEATURES } from "@/lib/core/features";
 import type { Application, FreelancerCard } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,13 @@ export function ApplicantRow({ app, freelancer, canDecide, onRate }: ApplicantRo
 
   const rate = freelancer.attendanceRate;
   const attendanceTone =
-    rate === null ? "text-muted" : rate >= 95 ? "text-ok-ink" : rate >= 85 ? "text-ink" : "text-warn-ink";
+    rate === null
+      ? "text-muted"
+      : rate >= 95
+        ? "text-ok-ink"
+        : rate >= 85
+          ? "text-ink"
+          : "text-warn-ink";
 
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
@@ -87,7 +94,7 @@ export function ApplicantRow({ app, freelancer, canDecide, onRate }: ApplicantRo
           )
         ) : (
           <>
-            {app.checkInAt && (
+            {FEATURES.checkIn && app.checkInAt && (
               <Badge tone="ok">
                 <MapPinCheck className="size-3.5" aria-hidden />
                 No local
