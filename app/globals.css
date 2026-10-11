@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Brand colors that never change with the theme. */
+@theme {
+  --color-navy: #1e293b; /* brand surface: sidebar, header, ticket stub */
+  --color-navy-deep: #0f172a; /* text on orange/green and on white over navy */
+  --color-cta: #ff6b00;
+  --color-cta-hover: #e85f00;
+  --color-ok: #10b981;
+  --color-warn: #f59e0b;
+  /* Chart marks. Validated (dataviz) for 3:1 and lightness band on both themes. */
+  --color-chart: #059669;
+
+  /* Theme tokens: values below come from :root (light) and [data-theme="dark"]. */
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --color-ok-ink: var(--ok-ink);
+  --color-ok-wash: var(--ok-wash);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-wash: var(--warn-wash);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-toast-in: toast-in 220ms ease-out;
+  --animate-sheet-in: sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+:root {
+  color-scheme: light;
+  --canvas: #f8fafc;
+  --card: #ffffff;
+  --subtle: #f1f5f9;
+  --line: #e2e8f0;
+  --ink: #1e293b;
+  --ink-soft: #334155;
+  --muted: #64748b;
+  --inverse: #1e293b;
+  --on-inverse: #ffffff;
+  --ok-ink: #047857; /* green for text on white (AA) */
+  --ok-wash: #ecfdf5;
+  --warn-ink: #92400e;
+  --warn-wash: #fffbeb;
+  --danger: #dc2626;
+  --danger-wash: #fef2f2;
+}
+
+/* Dark: a deeper night blue, so the navy brand surfaces still read as
+   their own layer. Set by the theme toggle (see components/theme-toggle). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0b1120;
+  --card: #141d31;
+  --subtle: #1d2840;
+  --line: #27334d;
+  --ink: #e2e8f0;
+  --ink-soft: #cbd5e1;
+  --muted: #94a3b8;
+  --inverse: #e2e8f0;
+  --on-inverse: #0f172a;
+  --ok-ink: #34d399;
+  --ok-wash: rgb(16 185 129 / 0.14);
+  --warn-ink: #fbbf24;
+  --warn-wash: rgb(245 158 11 / 0.14);
+  --danger: #f87171;
+  --danger-wash: rgb(248 113 113 / 0.12);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-cta);
+  outline-offset: 2px;
+}
+
+/* Ticket perforation: notches cut into top and bottom of the stub edge. */
+.ticket {
+  --notch: 9px;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at var(--stub) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at var(--stub) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle var(--notch) at var(--stub) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at var(--stub) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
