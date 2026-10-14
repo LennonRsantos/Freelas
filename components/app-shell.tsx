@@ -15,6 +15,7 @@ import type { ViewMode } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
+import { RefreshButton } from "./refresh-button";
 import { ThemeToggle } from "./theme-toggle";
 import { Toaster } from "./toaster";
 
@@ -110,7 +111,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/vagas" aria-label="Freelas, procurar vagas">
             <Logo tone="light" compact />
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <RefreshButton />
+            <ThemeToggle />
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-5 pb-28 sm:px-6 md:px-8 md:pt-8 md:pb-12">
@@ -118,7 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      {/* Bottom navigation: phones */}
+      {/* Bottom navigation: phones. Icons only; the name stays for screen readers. */}
       <nav
         aria-label="Principal"
         className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 backdrop-blur md:hidden"
@@ -132,14 +136,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
+                  aria-label={label}
+                  title={label}
                   className={cn(
-                    "flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium",
+                    "flex h-16 items-center justify-center",
                     active ? "text-ink" : "text-muted",
                   )}
                 >
                   {primary ? (
-                    <span className="-my-1 grid size-8 place-items-center rounded-lg bg-cta text-navy-deep">
-                      <Icon className="size-[18px]" aria-hidden />
+                    <span className="grid size-10 place-items-center rounded-xl bg-cta text-navy-deep">
+                      <Icon className="size-5" aria-hidden />
                     </span>
                   ) : (
                     <Icon
@@ -148,7 +154,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                       aria-hidden
                     />
                   )}
-                  {label}
                 </Link>
               </li>
             );

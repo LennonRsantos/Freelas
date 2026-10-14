@@ -178,6 +178,8 @@ export default function DemoProvider({ children }: { children: ReactNode }) {
       freelancerOf,
       publishJob,
       resetDemo,
+      // Demo data lives on the device; there is nothing newer to fetch.
+      reload: async () => {},
       toasts,
       notify,
     }),

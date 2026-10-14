@@ -247,10 +247,11 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       freelancerOf,
       publishJob,
       resetDemo: () => {},
+      reload: refresh,
       toasts,
       notify,
     }),
-    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify],
+    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify, refresh],
   );
 
   if (session === undefined || (uid && !firstLoadDone && !sawSignedOut)) return <Splash />;

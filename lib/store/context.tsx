@@ -41,6 +41,8 @@ export interface Store {
   /** Publishes a job and returns its id right away. */
   publishJob: (job: Extract<Action, { type: "publish_job" }>["job"]) => string;
   resetDemo: () => void;
+  /** Fetches jobs and applications again. */
+  reload: () => Promise<void>;
   toasts: Toast[];
   notify: (message: string, tone?: Toast["tone"]) => void;
 }
