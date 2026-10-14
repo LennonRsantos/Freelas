@@ -140,16 +140,23 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
 
   const auth = useMemo<Store["auth"]>(
     () => ({
-      async sendCode(address) {
-        const { error } = await sb.auth.signInWithOtp({
+      async signUp(address, password) {
+        const { data, error } = await sb.auth.signUp({
           email: address,
-          options: { shouldCreateUser: true },
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/entrar` },
         });
+        // With e-mail confirmation on, Supabase hides taken addresses behind an empty identities list.
+        if (error?.code === "user_already_exists" || data.user?.identities?.length === 0) {
+          throw new Error(
+            "Este e-mail já tem conta. Entre com sua senha ou use “Esqueci minha senha”.",
+          );
+        }
+        if (error?.code === "weak_password") {
+          throw new Error("Senha fraca. Use pelo menos 8 caracteres, misturando letras e números.");
+        }
         if (error) throw new Error(error.message);
-      },
-      async verifyCode(address, code) {
-        const { error } = await sb.auth.verifyOtp({ email: address, token: code, type: "email" });
-        if (error) throw new Error("Código inválido ou expirado. Peça um novo código.");
+        return { needsConfirmation: !data.session };
       },
       async signInWithPassword(address, password) {
         const { error } = await sb.auth.signInWithPassword({ email: address, password });

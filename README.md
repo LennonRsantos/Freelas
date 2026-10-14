@@ -18,8 +18,8 @@ Com as chaves do Supabase no `.env.local`, o app usa o banco de verdade, sem nen
 
 1. No **SQL Editor** do projeto, rode `supabase/schema.sql` e depois `supabase/002_funcoes_e_seguranca.sql`. O segundo pode ser rodado de novo sem problema.
 2. Copie `.env.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` (a chave **publishable**, `sb_publishable_…`). Nunca use a chave secreta no app.
-3. Login por código: em **Authentication → Emails → Templates**, edite **Magic Link** e **Confirm signup** para mostrar o código com `{{ .Token }}` (ex.: `Seu código Freelas: {{ .Token }}`).
-4. Em **Authentication → URL Configuration**, coloque o endereço do site em **Site URL**.
+3. Login com e-mail e senha. Em **Authentication → Sign In / Providers → Email**, **Confirm email** decide se a conta nova precisa confirmar o e-mail por link antes de entrar. Ligado, edite o modelo **Confirm signup** em **Authentication → Emails**, e o **Reset password** ("Esqueci minha senha") em qualquer caso. Os dois precisam manter `{{ .ConfirmationURL }}`.
+4. Em **Authentication → URL Configuration**, coloque o endereço do site em **Site URL** e adicione `https://SEU-DOMINIO/entrar` e `https://SEU-DOMINIO/entrar/nova-senha` em **Redirect URLs**.
 5. O e-mail padrão do Supabase só entrega para membros do projeto e tem limite baixo por hora. Para usuários reais, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**.
 
 Como funciona: as telas leem as tabelas direto; toda mudança (candidatar, aprovar, check-in, finalizar, cancelar, avaliar) passa por funções no banco que conferem quem pede e se é permitido. O check-in por GPS está desligado por enquanto (veja abaixo). Candidaturas e vagas chegam em tempo real.

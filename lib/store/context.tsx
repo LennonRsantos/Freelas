@@ -13,9 +13,8 @@ export interface Toast {
 export type Backend = "demo" | "supabase";
 
 export interface AuthApi {
-  /** Emails a 6-digit sign-in code. */
-  sendCode: (email: string) => Promise<void>;
-  verifyCode: (email: string, code: string) => Promise<void>;
+  /** Creates the account. Without a session yet, the user must confirm the e-mail first. */
+  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   /** Emails a link to /entrar/nova-senha. */
   sendPasswordReset: (email: string) => Promise<void>;

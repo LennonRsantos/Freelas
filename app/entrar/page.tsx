@@ -16,8 +16,9 @@ import { remembersSession, setRememberSession } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type Intent = "login" | "signup";
-type Step = "email" | "code" | "forgot" | "profile";
-type Method = "password" | "code";
+type Step = "email" | "confirm" | "forgot" | "profile";
+
+const MIN_PASSWORD = 8;
 
 const CHOICES: { mode: ViewMode; title: string; text: string; icon: typeof ChefHat }[] = [
   {
@@ -44,28 +45,22 @@ export default function EntrarPage() {
   const [mode, setMode] = useState<ViewMode>("freelancer");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string>();
-  const [code, setCode] = useState("");
-  const [codeError, setCodeError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [method, setMethod] = useState<Method>("password");
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   // The checkbox starts from the last choice made on this device.
   const [remember, setRemember] = useState(remembersSession);
   const [resetSentTo, setResetSentTo] = useState<string>();
 
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [resendIn]);
+  const hasProfile = Boolean(state.user?.freelancer || state.user?.contratante);
+  // Signed in without a profile (e.g. back from the confirmation e-mail): fill in the data.
+  const view: Step = remote && state.user && !hasProfile && step !== "forgot" ? "profile" : step;
 
   // Anyone who already has a profile goes straight into the app.
   useEffect(() => {
-    if (state.user?.freelancer || state.user?.contratante) router.replace(homeFor(state.mode));
-  }, [state.user, state.mode, router]);
+    if (hasProfile) router.replace(homeFor(state.mode));
+  }, [hasProfile, state.mode, router]);
 
   function switchIntent(next: Intent) {
     setIntent(next);
@@ -83,68 +78,41 @@ export default function EntrarPage() {
     return false;
   }
 
-  async function sendCode() {
-    if (!auth) return;
-    setBusy(true);
-    try {
-      await auth.sendCode(email.trim());
-      setStep("code");
-      setResendIn(60);
-    } catch (e) {
-      setEmailError(`Não foi possível enviar o código: ${(e as Error).message}`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function submitEmail(e: FormEvent) {
-    e.preventDefault();
-    if (!validEmail()) return;
-    dispatch({ type: "set_mode", mode });
-    if (remote) {
-      // New accounts stay signed in; on login the checkbox decides.
-      setRememberSession(intent === "signup" || remember);
-      await sendCode();
-    } else {
-      dispatch({ type: "sign_up", email: email.trim(), mode });
-      setStep("profile");
-    }
-  }
-
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    if (!auth) return;
-    if (!/^\d{6,10}$/.test(code)) {
-      setCodeError("Digite todos os números do código.");
-      return;
-    }
-    setBusy(true);
-    setCodeError(undefined);
-    try {
-      await auth.verifyCode(email.trim(), code);
-      // Returning users are sent home by the effect above once their profile loads.
-      setStep("profile");
-    } catch (err) {
-      setCodeError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function submitPassword(e: FormEvent) {
-    e.preventDefault();
-    if (!auth || !validEmail()) return;
-    if (!password) {
-      setPasswordError("Digite sua senha.");
-      return;
+  function validPassword() {
+    if (intent === "login" ? !password : password.length < MIN_PASSWORD) {
+      setPasswordError(
+        intent === "login" ? "Digite sua senha." : `Use pelo menos ${MIN_PASSWORD} caracteres.`,
+      );
+      return false;
     }
     setPasswordError(undefined);
-    setRememberSession(remember);
+    return true;
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const okEmail = validEmail();
+    if (!remote) {
+      if (!okEmail) return;
+      dispatch({ type: "set_mode", mode });
+      dispatch({ type: "sign_up", email: email.trim(), mode });
+      setStep("profile");
+      return;
+    }
+    if (!validPassword() || !okEmail || !auth) return;
+    dispatch({ type: "set_mode", mode });
+    // New accounts stay signed in; on login the checkbox decides.
+    setRememberSession(intent === "signup" || remember);
     setBusy(true);
     try {
-      await auth.signInWithPassword(email.trim(), password);
-      // Returning users are sent home by the effect above once their profile loads.
-      setStep("profile");
+      if (intent === "login") {
+        await auth.signInWithPassword(email.trim(), password);
+        // Returning users are sent home by the effect above once their profile loads.
+        setStep("profile");
+      } else {
+        const { needsConfirmation } = await auth.signUp(email.trim(), password);
+        setStep(needsConfirmation ? "confirm" : "profile");
+      }
     } catch (err) {
       setPasswordError((err as Error).message);
     } finally {
@@ -172,8 +140,25 @@ export default function EntrarPage() {
     else router.replace(homeFor(mode));
   }
 
-  const steps = remote ? ["Conta", "Código", "Seus dados"] : ["Conta", "Seus dados"];
-  const stepIndex = step === "email" ? 0 : step === "code" ? 1 : steps.length - 1;
+  const steps = ["Conta", "Seus dados"];
+  const stepIndex = view === "profile" ? 1 : 0;
+
+  const passwordField = remote && (
+    <Field
+      label="Senha"
+      hint={intent === "signup" ? `Pelo menos ${MIN_PASSWORD} caracteres.` : undefined}
+      error={passwordError}
+    >
+      {(a) => (
+        <PasswordInput
+          {...a}
+          autoComplete={intent === "login" ? "current-password" : "new-password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      )}
+    </Field>
+  );
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -181,7 +166,7 @@ export default function EntrarPage() {
 
       <section className="flex justify-center px-5 pt-6 pb-10 md:items-center md:px-12 md:py-10">
         <div className="w-full max-w-lg">
-          {step === "email" && (
+          {view === "email" && (
             <div
               role="group"
               aria-label="Entrar ou criar conta"
@@ -209,38 +194,25 @@ export default function EntrarPage() {
             </div>
           )}
 
-          {intent === "signup" && <Stepper steps={steps} current={stepIndex} />}
+          {intent === "signup" && view !== "confirm" && (
+            <Stepper steps={steps} current={stepIndex} />
+          )}
 
-          {step === "email" &&
+          {view === "email" &&
             (intent === "login" ? (
-              <form
-                onSubmit={remote && method === "password" ? submitPassword : submitEmail}
-                noValidate
-                className="flex flex-col gap-5"
-              >
+              <form onSubmit={submit} noValidate className="flex flex-col gap-5">
                 <div>
                   <h2 className="text-2xl font-extrabold">Bem-vindo de volta</h2>
                   <p className="mt-1 text-muted">
-                    {!remote
-                      ? "Digite seu e-mail para entrar na demonstração."
-                      : method === "password"
-                        ? "Entre com seu e-mail e senha."
-                        : "Digite seu e-mail. Enviamos um código de acesso, sem senha."}
+                    {remote
+                      ? "Entre com seu e-mail e senha."
+                      : "Digite seu e-mail para entrar na demonstração."}
                   </p>
                 </div>
                 <EmailField value={email} onChange={setEmail} error={emailError} />
-                {remote && method === "password" && (
+                {remote && (
                   <div className="flex flex-col gap-1.5">
-                    <Field label="Senha" error={passwordError}>
-                      {(a) => (
-                        <PasswordInput
-                          {...a}
-                          autoComplete="current-password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                      )}
-                    </Field>
+                    {passwordField}
                     <button
                       type="button"
                       onClick={() => {
@@ -266,31 +238,8 @@ export default function EntrarPage() {
                   </label>
                 )}
                 <Button type="submit" variant="cta" size="lg" block disabled={busy}>
-                  {busy
-                    ? method === "password" || !remote
-                      ? "Entrando…"
-                      : "Enviando…"
-                    : remote && method === "code"
-                      ? "Enviar código"
-                      : "Entrar"}
+                  {busy ? "Entrando…" : "Entrar"}
                 </Button>
-                {remote && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setMethod(method === "password" ? "code" : "password");
-                      setPasswordError(undefined);
-                    }}
-                  >
-                    {method === "password" ? (
-                      <Mail className="size-4" aria-hidden />
-                    ) : (
-                      <KeyRound className="size-4" aria-hidden />
-                    )}
-                    {method === "password" ? "Entrar com código por e-mail" : "Entrar com senha"}
-                  </Button>
-                )}
                 <p className="text-center text-sm text-muted">
                   Ainda não tem conta?{" "}
                   <button
@@ -303,7 +252,7 @@ export default function EntrarPage() {
                 </p>
               </form>
             ) : (
-              <form onSubmit={submitEmail} noValidate className="flex flex-col gap-5">
+              <form onSubmit={submit} noValidate className="flex flex-col gap-5">
                 <div>
                   <h2 className="text-2xl font-extrabold">Crie sua conta grátis</h2>
                   <p className="mt-1 text-muted">
@@ -312,8 +261,9 @@ export default function EntrarPage() {
                 </div>
                 <ModeCards value={mode} onChange={setMode} />
                 <EmailField value={email} onChange={setEmail} error={emailError} />
+                {passwordField}
                 <Button type="submit" variant="cta" size="lg" block disabled={busy}>
-                  {busy ? "Enviando…" : "Continuar"}
+                  {busy ? "Criando conta…" : "Continuar"}
                 </Button>
                 <p className="text-center text-sm text-muted">
                   Já tem conta?{" "}
@@ -333,7 +283,26 @@ export default function EntrarPage() {
               </form>
             ))}
 
-          {step === "forgot" && (
+          {view === "confirm" && (
+            <div className="flex flex-col gap-5">
+              <div>
+                <span className="mb-3 grid size-11 place-items-center rounded-xl bg-subtle text-ink">
+                  <Mail className="size-5" aria-hidden />
+                </span>
+                <h2 className="text-2xl font-extrabold">Confirme seu e-mail</h2>
+                <p className="mt-1 text-muted">
+                  Enviamos um link para <span className="font-medium text-ink">{email}</span>. Abra
+                  o e-mail neste aparelho para ativar a conta e continuar o cadastro. Veja também a
+                  caixa de spam.
+                </p>
+              </div>
+              <Button variant="ghost" onClick={() => switchIntent("login")}>
+                Já confirmei, quero entrar
+              </Button>
+            </div>
+          )}
+
+          {view === "forgot" && (
             <form onSubmit={sendReset} noValidate className="flex flex-col gap-5">
               <div>
                 <BackButton
@@ -372,56 +341,7 @@ export default function EntrarPage() {
             </form>
           )}
 
-          {step === "code" && (
-            <form onSubmit={verify} noValidate className="flex flex-col gap-5">
-              <div>
-                <BackButton
-                  label="Usar outro e-mail"
-                  onClick={() => {
-                    setStep("email");
-                    setCode("");
-                    setCodeError(undefined);
-                  }}
-                />
-                <span className="mb-3 grid size-11 place-items-center rounded-xl bg-subtle text-ink">
-                  <Mail className="size-5" aria-hidden />
-                </span>
-                <h2 className="text-2xl font-extrabold">Confira seu e-mail</h2>
-                <p className="mt-1 text-muted">
-                  Enviamos um código para <span className="font-medium text-ink">{email}</span>.
-                  Veja também a caixa de spam.
-                </p>
-              </div>
-              <Field label="Código de acesso" error={codeError}>
-                {(a) => (
-                  <Input
-                    {...a}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={10}
-                    placeholder="000000"
-                    autoFocus
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    className="h-14 text-center font-display text-2xl tracking-[0.5em]"
-                  />
-                )}
-              </Field>
-              <Button type="submit" variant="cta" size="lg" block disabled={busy}>
-                {busy ? "Entrando…" : "Entrar"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={busy || resendIn > 0}
-                onClick={() => void sendCode()}
-              >
-                {resendIn > 0 ? `Reenviar código em ${resendIn}s` : "Reenviar código"}
-              </Button>
-            </form>
-          )}
-
-          {step === "profile" &&
+          {view === "profile" &&
             (remote && (!state.user || saving) ? (
               <p className="py-16 text-center text-muted" role="status">
                 {saving ? "Salvando seu perfil…" : "Entrando…"}
