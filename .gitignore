@@ -34,9 +34,17 @@ yarn-error.log*
 .env*
 !.env.example
 
+# android signing keys (never commit)
+*.jks
+*.keystore
+keystore.properties
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Android Studio
+.idea/

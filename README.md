@@ -66,6 +66,39 @@ app/manifest.ts + public/sw.js   PWA: instalação e cache offline do app shell
 - O card de vaga imita uma comanda de turno: canhoto escuro com data e horário, borda picotada e corpo com função, local e valor.
 - Tipografia: Plus Jakarta Sans (títulos) e Inter (texto, formulários e botões).
 
+## App Android (APK)
+
+O app Android é feito com [Capacitor](https://capacitorjs.com): um app nativo que abre o site publicado (`https://freelasbr.vercel.app`). Fica na pasta `android/`, configurado em `capacitor.config.ts`.
+
+- **Mudanças de tela ou de lógica** chegam ao app com o deploy na Vercel. Não precisa gerar APK novo.
+- **Gere APK novo só quando mudar** `capacitor.config.ts`, plugins `@capacitor/*`, ícones, splash ou algo em `android/`.
+- Sem internet, o app mostra a página local `android-shell/index.html`.
+- `components/native-bridge.tsx` cuida do botão voltar do Android, esconde o splash e abre dentro do app os links de e-mail para `/entrar`.
+
+### Preparar a máquina (uma vez)
+
+1. Instale o [Android Studio](https://developer.android.com/studio). Ele traz o Android SDK e o Java 21.
+2. Crie as variáveis de ambiente do Windows (Pesquisar → "variáveis de ambiente"):
+   - `JAVA_HOME` = `C:\Program Files\Android\Android Studio\jbr` (o Java 8 não funciona).
+   - `ANDROID_HOME` = `%LOCALAPPDATA%\Android\Sdk`.
+3. Abra o Android Studio uma vez e deixe ele baixar o SDK.
+
+### Gerar o APK
+
+```bash
+npm run android:apk    # APK de teste em android/app/build/outputs/apk/debug/app-debug.apk
+npm run android:open   # abre o projeto no Android Studio (emulador, APK assinado)
+npm run android:sync   # depois de mudar capacitor.config.ts ou plugins
+```
+
+Para trocar ícone ou splash, edite as imagens em `assets/` e rode `npx @capacitor/assets generate --android --iconBackgroundColor "#1E293B" --splashBackgroundColor "#1E293B"`.
+
+### APK para distribuir (assinado)
+
+1. No Android Studio: **Build → Generate Signed App Bundle or APK**, crie uma chave nova (`.jks`).
+2. **Guarde a chave e as senhas fora do git e em lugar seguro.** Sem elas, não dá para publicar atualizações do app.
+3. Pegue o SHA-256 da chave com `keytool -list -v -keystore SUA-CHAVE.jks` e cole em `public/.well-known/assetlinks.json` no lugar de `COLE_AQUI_O_SHA256_DA_CHAVE_DE_ASSINATURA`. Faça o deploy. Assim os links de "Esqueci minha senha" e de confirmação de e-mail abrem dentro do app, e não no navegador.
+
 ## Próximos passos para produção
 
 - Trocar o reducer local por chamadas ao Supabase (Auth com magic link, tabelas de `schema.sql`) e assinar `applications` via Realtime.
