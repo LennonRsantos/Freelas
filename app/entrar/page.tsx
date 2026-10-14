@@ -211,7 +211,7 @@ export default function EntrarPage() {
   );
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="animate-app-in min-h-dvh md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <Hero />
 
       <section className="flex justify-center px-5 pt-6 pb-10 md:items-center md:px-12 md:py-10">

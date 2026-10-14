@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const items = navItems(Boolean(state.user.contratante));
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[264px_1fr]">
+    <div className="animate-app-in min-h-dvh md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[264px_1fr]">
       {/* Sidebar: tablet and desktop */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-8 bg-navy px-4 py-6 text-white md:flex">
         <Link href="/vagas" className="px-2">

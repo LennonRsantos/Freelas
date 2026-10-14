@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { Contractor, FreelancerCard, Job } from "../core/types";
 import type { Action, State } from "./reducer";
 
@@ -76,13 +84,31 @@ export function useToasts() {
   return { toasts, notify, timers };
 }
 
+// When the first splash appeared, so a remounted splash picks up where it was.
+let splashStart: number | undefined;
+
+/** Opening screen while the app loads. Animation lives in globals.css (.splash-*). */
 export function Splash() {
+  const [offset] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    splashStart ??= performance.now();
+    return performance.now() - splashStart;
+  });
   return (
-    <div className="grid min-h-dvh place-items-center bg-navy">
-      <p className="font-display text-2xl font-extrabold tracking-tight text-white">
-        Freelas
-        <span className="text-cta">.</span>
-      </p>
+    <div
+      role="status"
+      aria-label="Carregando o Freelas"
+      className="grid min-h-dvh place-items-center bg-navy"
+      style={{ "--splash-t": `-${Math.round(offset)}ms` } as CSSProperties}
+    >
+      <div className="flex flex-col items-center gap-6">
+        <p className="flex items-baseline font-display text-4xl font-extrabold tracking-tight text-white">
+          <span className="splash-f">F</span>
+          <span className="splash-rest">reelas</span>
+          <span className="splash-dot text-cta">.</span>
+        </p>
+        <span className="splash-bar" aria-hidden />
+      </div>
     </div>
   );
 }
