@@ -12,9 +12,15 @@ export interface Toast {
 /** Where the data lives: the device (demo) or Supabase. */
 export type Backend = "demo" | "supabase";
 
+/** Sign-in refused because the account's e-mail was never confirmed. */
+export class EmailNotConfirmedError extends Error {}
+
 export interface AuthApi {
   /** Creates the account. Without a session yet, the user must confirm the e-mail first. */
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
+  /** Confirms a new account with the code from the sign-up e-mail. */
+  confirmSignUp: (email: string, code: string) => Promise<void>;
+  resendSignUp: (email: string) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   /** Emails a link to /entrar/nova-senha. */
   sendPasswordReset: (email: string) => Promise<void>;

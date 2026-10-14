@@ -14,7 +14,7 @@ import { fetchSnapshot, runAction } from "../data/remote";
 import { ME } from "../core/ids";
 import type { Contractor, Job, ViewMode } from "../core/types";
 import { getSupabase } from "../supabase/client";
-import { Splash, StoreContext, useToasts, type Store } from "./context";
+import { EmailNotConfirmedError, Splash, StoreContext, useToasts, type Store } from "./context";
 import { reducer, type Action, type State } from "./reducer";
 
 const MODE_KEY = "freelas:mode";
@@ -135,7 +135,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
           void refresh();
         });
     },
-    [sb, uid, refresh, notify, state.mode],
+    [sb, uid, refresh, notify, state.mode]
   );
 
   const auth = useMemo<Store["auth"]>(
@@ -149,7 +149,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         // With e-mail confirmation on, Supabase hides taken addresses behind an empty identities list.
         if (error?.code === "user_already_exists" || data.user?.identities?.length === 0) {
           throw new Error(
-            "Este e-mail já tem conta. Entre com sua senha ou use “Esqueci minha senha”.",
+            "Este e-mail já tem conta. Entre com sua senha ou use “Esqueci minha senha”."
           );
         }
         if (error?.code === "weak_password") {
@@ -158,12 +158,24 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         if (error) throw new Error(error.message);
         return { needsConfirmation: !data.session };
       },
+      async confirmSignUp(address, code) {
+        const { error } = await sb.auth.verifyOtp({ email: address, token: code, type: "email" });
+        if (error) throw new Error("Código inválido ou expirado. Peça um novo código.");
+      },
+      async resendSignUp(address) {
+        const { error } = await sb.auth.resend({
+          type: "signup",
+          email: address,
+          options: { emailRedirectTo: `${window.location.origin}/entrar` },
+        });
+        if (error) throw new Error(error.message);
+      },
       async signInWithPassword(address, password) {
         const { error } = await sb.auth.signInWithPassword({ email: address, password });
         if (!error) return;
         if (error.code === "invalid_credentials") throw new Error("E-mail ou senha incorretos.");
         if (error.code === "email_not_confirmed") {
-          throw new Error("Confirme seu e-mail antes de entrar com senha.");
+          throw new EmailNotConfirmedError("Confirme seu e-mail para entrar.");
         }
         throw new Error(error.message);
       },
@@ -185,7 +197,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message);
       },
     }),
-    [sb],
+    [sb]
   );
 
   const contractorOf = useCallback(
@@ -203,12 +215,12 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       }
       return card ?? { id: job.contractorId, name: "Contratante", rating: 0, ratingCount: 0 };
     },
-    [state.directory, state.user],
+    [state.directory, state.user]
   );
 
   const freelancerOf = useCallback(
     (id: string) => state.directory?.freelancers.find((f) => f.id === id),
-    [state.directory],
+    [state.directory]
   );
 
   const publishJob = useCallback<Store["publishJob"]>(
@@ -217,7 +229,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "publish_job", job, id, now: new Date().toISOString() });
       return id;
     },
-    [dispatch],
+    [dispatch]
   );
 
   // Signed out: nothing from a previous account stays on screen.
@@ -237,7 +249,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       toasts,
       notify,
     }),
-    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify],
+    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify]
   );
 
   if (session === undefined || (uid && !firstLoadDone && !sawSignedOut)) return <Splash />;

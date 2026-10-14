@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import type { ViewMode } from "@/lib/core/types";
+import { EmailNotConfirmedError } from "@/lib/store/context";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { remembersSession, setRememberSession } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,15 @@ export default function EntrarPage() {
   // The checkbox starts from the last choice made on this device.
   const [remember, setRemember] = useState(remembersSession);
   const [resetSentTo, setResetSentTo] = useState<string>();
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string>();
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   const hasProfile = Boolean(state.user?.freelancer || state.user?.contratante);
   // Signed in without a profile (e.g. back from the confirmation e-mail): fill in the data.
@@ -81,7 +91,7 @@ export default function EntrarPage() {
   function validPassword() {
     if (intent === "login" ? !password : password.length < MIN_PASSWORD) {
       setPasswordError(
-        intent === "login" ? "Digite sua senha." : `Use pelo menos ${MIN_PASSWORD} caracteres.`,
+        intent === "login" ? "Digite sua senha." : `Use pelo menos ${MIN_PASSWORD} caracteres.`
       );
       return false;
     }
@@ -112,9 +122,49 @@ export default function EntrarPage() {
       } else {
         const { needsConfirmation } = await auth.signUp(email.trim(), password);
         setStep(needsConfirmation ? "confirm" : "profile");
+        if (needsConfirmation) setResendIn(60);
       }
     } catch (err) {
-      setPasswordError((err as Error).message);
+      if (err instanceof EmailNotConfirmedError) {
+        // Never confirmed: send a fresh code and ask for it right here.
+        await resendCode();
+        setStep("confirm");
+      } else {
+        setPasswordError((err as Error).message);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmCode(e: FormEvent) {
+    e.preventDefault();
+    if (!auth) return;
+    if (!/^\d{6,10}$/.test(code)) {
+      setCodeError("Digite todos os números do código.");
+      return;
+    }
+    setCodeError(undefined);
+    setBusy(true);
+    try {
+      // Signed in once confirmed; the page then moves on to "Seus dados".
+      await auth.confirmSignUp(email.trim(), code);
+    } catch (err) {
+      setCodeError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendCode() {
+    if (!auth) return;
+    setBusy(true);
+    try {
+      await auth.resendSignUp(email.trim());
+      setResendIn(60);
+      setCodeError(undefined);
+    } catch (err) {
+      setCodeError(`Não foi possível reenviar: ${(err as Error).message}`);
     } finally {
       setBusy(false);
     }
@@ -185,7 +235,7 @@ export default function EntrarPage() {
                   onClick={() => switchIntent(value)}
                   className={cn(
                     "h-10 rounded-lg text-[15px] font-semibold transition-colors",
-                    intent === value ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink",
+                    intent === value ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"
                   )}
                 >
                   {label}
@@ -284,22 +334,52 @@ export default function EntrarPage() {
             ))}
 
           {view === "confirm" && (
-            <div className="flex flex-col gap-5">
+            <form onSubmit={confirmCode} noValidate className="flex flex-col gap-5">
               <div>
+                <BackButton
+                  label="Usar outro e-mail"
+                  onClick={() => {
+                    setStep("email");
+                    setCode("");
+                    setCodeError(undefined);
+                  }}
+                />
                 <span className="mb-3 grid size-11 place-items-center rounded-xl bg-subtle text-ink">
                   <Mail className="size-5" aria-hidden />
                 </span>
                 <h2 className="text-2xl font-extrabold">Confirme seu e-mail</h2>
                 <p className="mt-1 text-muted">
-                  Enviamos um link para <span className="font-medium text-ink">{email}</span>. Abra
-                  o e-mail neste aparelho para ativar a conta e continuar o cadastro. Veja também a
-                  caixa de spam.
+                  Enviamos um código para <span className="font-medium text-ink">{email}</span>.
+                  Digite abaixo para ativar a conta. Veja também a caixa de spam.
                 </p>
               </div>
-              <Button variant="ghost" onClick={() => switchIntent("login")}>
-                Já confirmei, quero entrar
+              <Field label="Código de confirmação" error={codeError}>
+                {(a) => (
+                  <Input
+                    {...a}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={10}
+                    placeholder="000000"
+                    autoFocus
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    className="h-14 text-center font-display text-2xl tracking-[0.5em]"
+                  />
+                )}
+              </Field>
+              <Button type="submit" variant="cta" size="lg" block disabled={busy}>
+                {busy ? "Confirmando…" : "Confirmar e continuar"}
               </Button>
-            </div>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy || resendIn > 0}
+                onClick={() => void resendCode()}
+              >
+                {resendIn > 0 ? `Reenviar código em ${resendIn}s` : "Reenviar código"}
+              </Button>
+            </form>
           )}
 
           {view === "forgot" && (
@@ -493,13 +573,13 @@ function ModeCards({ value, onChange }: { value: ViewMode; onChange: (m: ViewMod
             onClick={() => onChange(mode)}
             className={cn(
               "flex flex-col gap-2 rounded-2xl border-2 bg-card p-3.5 text-left transition-colors sm:p-4",
-              active ? "border-cta" : "border-line hover:border-ink/30",
+              active ? "border-cta" : "border-line hover:border-ink/30"
             )}
           >
             <span
               className={cn(
                 "grid size-9 place-items-center rounded-xl",
-                active ? "bg-cta text-navy-deep" : "bg-subtle text-ink",
+                active ? "bg-cta text-navy-deep" : "bg-subtle text-ink"
               )}
             >
               <Icon className="size-5" aria-hidden />
@@ -529,7 +609,7 @@ function ModeSwitch({ value, onChange }: { value: ViewMode; onChange: (m: ViewMo
           onClick={() => onChange(mode)}
           className={cn(
             "h-9 rounded-lg text-sm font-semibold transition-colors",
-            value === mode ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink",
+            value === mode ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"
           )}
         >
           {title}
