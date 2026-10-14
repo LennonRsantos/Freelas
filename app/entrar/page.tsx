@@ -91,7 +91,7 @@ export default function EntrarPage() {
   function validPassword() {
     if (intent === "login" ? !password : password.length < MIN_PASSWORD) {
       setPasswordError(
-        intent === "login" ? "Digite sua senha." : `Use pelo menos ${MIN_PASSWORD} caracteres.`
+        intent === "login" ? "Digite sua senha." : `Use pelo menos ${MIN_PASSWORD} caracteres.`,
       );
       return false;
     }
@@ -235,7 +235,7 @@ export default function EntrarPage() {
                   onClick={() => switchIntent(value)}
                   className={cn(
                     "h-10 rounded-lg text-[15px] font-semibold transition-colors",
-                    intent === value ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"
+                    intent === value ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink",
                   )}
                 >
                   {label}
@@ -573,13 +573,13 @@ function ModeCards({ value, onChange }: { value: ViewMode; onChange: (m: ViewMod
             onClick={() => onChange(mode)}
             className={cn(
               "flex flex-col gap-2 rounded-2xl border-2 bg-card p-3.5 text-left transition-colors sm:p-4",
-              active ? "border-cta" : "border-line hover:border-ink/30"
+              active ? "border-cta" : "border-line hover:border-ink/30",
             )}
           >
             <span
               className={cn(
                 "grid size-9 place-items-center rounded-xl",
-                active ? "bg-cta text-navy-deep" : "bg-subtle text-ink"
+                active ? "bg-cta text-navy-deep" : "bg-subtle text-ink",
               )}
             >
               <Icon className="size-5" aria-hidden />
@@ -609,7 +609,7 @@ function ModeSwitch({ value, onChange }: { value: ViewMode; onChange: (m: ViewMo
           onClick={() => onChange(mode)}
           className={cn(
             "h-9 rounded-lg text-sm font-semibold transition-colors",
-            value === mode ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"
+            value === mode ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink",
           )}
         >
           {title}
