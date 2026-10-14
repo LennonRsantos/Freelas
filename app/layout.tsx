@@ -16,11 +16,23 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const title = "Freelas — Seu freela na hora certa";
+const description =
+  "Marketplace que conecta restaurantes, buffets e eventos a garçons, cumins, barmen e recepcionistas freelancers.";
+
 export const metadata: Metadata = {
-  title: "Freelas — Seu freela na hora certa",
-  description:
-    "Marketplace que conecta restaurantes, buffets e eventos a garçons, cumins, barmen e recepcionistas freelancers.",
+  metadataBase: new URL("https://freelasbr.vercel.app"),
+  title,
+  description,
   applicationName: "Freelas",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Freelas",
+    title,
+    description,
+  },
+  twitter: { card: "summary_large_image", title, description },
   appleWebApp: { capable: true, title: "Freelas", statusBarStyle: "default" },
 };
 
