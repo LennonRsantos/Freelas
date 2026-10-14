@@ -348,6 +348,10 @@ function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucke
 
 /* ---------- Vagas que a empresa do usuário ofereceu ---------- */
 
+/** Someone is waiting on this job: cancelling it counts against the contractor. */
+const hasCandidates = (apps: Application[]) =>
+  apps.some((a) => a.status === "em_analise" || a.status === "confirmada");
+
 /** What cancelling a whole job does to the people already on it. */
 function cancelConsequences(apps: Application[]): Consequence[] {
   const confirmed = apps.filter((a) => a.status === "confirmada").length;
@@ -370,6 +374,9 @@ function cancelConsequences(apps: Application[]): Consequence[] {
           ? "1 candidatura em análise é encerrada."
           : `${pending} candidaturas em análise são encerradas.`,
     });
+  }
+  if (confirmed === 0 && pending === 0) {
+    list.push({ icon: BellRing, text: "Ninguém é avisado, porque a vaga não tem candidatos." });
   }
   return list;
 }
@@ -495,7 +502,16 @@ function Oferecidos({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Buck
           title="Cancelar vaga?"
           job={cancelling}
           consequences={cancelConsequences(appsOf(cancelling))}
-          reputation="O número de turnos que você cancelou aparece para os freelancers nos detalhes das suas vagas. Muitos cancelamentos afastam bons profissionais."
+          {...(hasCandidates(appsOf(cancelling))
+            ? {
+                reputation:
+                  "Esta vaga já tem candidatos. O número de turnos que você cancelou aparece para os freelancers nos detalhes das suas vagas, e muitos cancelamentos afastam bons profissionais.",
+              }
+            : {
+                reputationRisk: false,
+                reputation:
+                  "Ninguém se candidatou a esta vaga ainda, então o cancelamento não entra no seu histórico.",
+              })}
           confirmLabel="Cancelar vaga"
           onConfirm={() => {
             dispatch({ type: "cancel_job", jobId: cancelling.id, now: new Date().toISOString() });

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlarmClock, CalendarDays, ShieldAlert, type LucideIcon } from "lucide-react";
+import { AlarmClock, CalendarDays, ShieldAlert, ShieldCheck, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { parseISODate } from "@/lib/core/logic";
 import type { Job } from "@/lib/core/types";
@@ -21,8 +21,9 @@ function hoursUntil(job: Job, now: Date): number {
 }
 
 /**
- * Confirmation for calling off a shift or a hire. Spells out what happens and
- * that it weighs on the user's reputation; the user must tick that they understood.
+ * Confirmation for calling off a shift or a hire. Spells out what happens and,
+ * when someone is affected, that it weighs on the user's reputation (the user
+ * must tick that they understood). With nobody affected it just reassures.
  */
 export function CancelDialog({
   open,
@@ -32,6 +33,7 @@ export function CancelDialog({
   who,
   consequences,
   reputation,
+  reputationRisk = true,
   confirmLabel,
   onConfirm,
 }: {
@@ -42,15 +44,18 @@ export function CancelDialog({
   /** Second line of the summary card, e.g. the person or business involved. */
   who?: string;
   consequences: Consequence[];
-  /** How this shows up on the user's reputation. */
+  /** How this shows up on the user's reputation (or why it doesn't). */
   reputation: string;
+  /** False when nobody is affected, so the cancellation leaves no mark. */
+  reputationRisk?: boolean;
   confirmLabel: string;
   onConfirm: () => void;
 }) {
   const [understood, setUnderstood] = useState(false);
   const [now] = useState(() => new Date());
   const left = hoursUntil(job, now);
-  const lastMinute = left >= 0 && left < 24;
+  // Last-minute only matters when someone was counting on the shift.
+  const lastMinute = reputationRisk && left >= 0 && left < 24;
   const date = parseISODate(job.date).toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
@@ -102,22 +107,32 @@ export function CancelDialog({
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-danger/30 bg-danger-wash p-4">
-          <p className="flex items-center gap-2 font-semibold text-danger">
-            <ShieldAlert className="size-5 shrink-0" aria-hidden />
-            Sua reputação pode cair
-          </p>
-          <p className="mt-1.5 text-sm text-ink-soft">{reputation}</p>
-          <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm font-medium text-ink">
-            <input
-              type="checkbox"
-              checked={understood}
-              onChange={(e) => setUnderstood(e.target.checked)}
-              className="mt-0.5 size-[18px] shrink-0 accent-cta"
-            />
-            Entendi que este cancelamento fica no meu histórico.
-          </label>
-        </div>
+        {reputationRisk ? (
+          <div className="rounded-2xl border border-danger/30 bg-danger-wash p-4">
+            <p className="flex items-center gap-2 font-semibold text-danger">
+              <ShieldAlert className="size-5 shrink-0" aria-hidden />
+              Sua reputação pode cair
+            </p>
+            <p className="mt-1.5 text-sm text-ink-soft">{reputation}</p>
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm font-medium text-ink">
+              <input
+                type="checkbox"
+                checked={understood}
+                onChange={(e) => setUnderstood(e.target.checked)}
+                className="mt-0.5 size-[18px] shrink-0 accent-cta"
+              />
+              Entendi que este cancelamento fica no meu histórico.
+            </label>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-ok/30 bg-ok-wash p-4">
+            <p className="flex items-center gap-2 font-semibold text-ok-ink">
+              <ShieldCheck className="size-5 shrink-0" aria-hidden />
+              Sua reputação não é afetada
+            </p>
+            <p className="mt-1.5 text-sm text-ink-soft">{reputation}</p>
+          </div>
+        )}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => close(false)}>
@@ -125,7 +140,7 @@ export function CancelDialog({
           </Button>
           <Button
             variant="danger"
-            disabled={!understood}
+            disabled={reputationRisk && !understood}
             onClick={() => {
               onConfirm();
               close(false);
