@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, CheckCircle2, Home, MapPinCheck, X } from "lucide-react";
+import { CalendarDays, Check, CheckCircle2, Home, MapPinCheck, X } from "lucide-react";
 import { FEATURES } from "@/lib/core/features";
+import { memberSince } from "@/lib/core/logic";
 import type { Application, FreelancerCard } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,12 @@ export function ApplicantRow({ app, freelancer, canDecide, onRate }: ApplicantRo
             <Home className="size-3.5 shrink-0" aria-hidden />
             Sai de {freelancer.homeArea}
           </p>
+          {freelancer.memberSince && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-muted">
+              <CalendarDays className="size-3.5 shrink-0" aria-hidden />
+              {memberSince(freelancer.memberSince)}
+            </p>
+          )}
         </div>
       </div>
 

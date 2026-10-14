@@ -157,6 +157,7 @@ export async function fetchSnapshot(
     logoUrl: c.logo_url ?? undefined,
     rating: Number(c.rating),
     ratingCount: Number(c.rating_count),
+    memberSince: c.member_since ?? undefined,
   }));
 
   const freelancers: FreelancerCard[] = must<Row[]>(freelancerCards).map((f) => ({
@@ -168,6 +169,7 @@ export async function fetchSnapshot(
     rating: Number(f.rating),
     ratingCount: Number(f.rating_count),
     attendanceRate: f.attendance_rate === null ? null : Number(f.attendance_rate),
+    memberSince: f.member_since ?? undefined,
   }));
 
   const f = must<Row | null>(fp);

@@ -198,6 +198,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
           logoUrl: state.user?.contratante?.logoUrl,
           rating: card?.rating ?? 0,
           ratingCount: card?.ratingCount ?? 0,
+          memberSince: card?.memberSince,
         };
       }
       return card ?? { id: job.contractorId, name: "Contratante", rating: 0, ratingCount: 0 };

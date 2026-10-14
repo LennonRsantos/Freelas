@@ -1,11 +1,12 @@
 "use client";
 
-import { CalendarDays, MapPin, Shirt, StickyNote } from "lucide-react";
+import { Building2, CalendarDays, MapPin, Shirt, StickyNote } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   formatAddress,
   formatHours,
   formatMoney,
+  memberSince,
   parseISODate,
   shiftHours,
 } from "@/lib/core/logic";
@@ -39,6 +40,15 @@ export function JobDetailsModal({
     { icon: MapPin, label: "Onde", value: formatAddress(job) },
     { icon: Shirt, label: "Traje", value: job.dressCode },
     ...(job.notes ? [{ icon: StickyNote, label: "Observações", value: job.notes }] : []),
+    ...(contractor.memberSince
+      ? [
+          {
+            icon: Building2,
+            label: "Contratante",
+            value: `${contractor.name}. ${memberSince(contractor.memberSince)}.`,
+          },
+        ]
+      : []),
   ];
 
   return (

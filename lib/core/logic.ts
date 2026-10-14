@@ -194,6 +194,12 @@ export function formatAddress(a: Address): string {
   return `${line}${extra}, ${a.neighborhood}, ${a.city}/${a.state}, CEP ${a.cep}`;
 }
 
+/** "Membro desde março de 2026", shown to the other side of a job. */
+export function memberSince(iso: string): string {
+  const d = new Date(iso);
+  return `Membro desde ${d.toLocaleDateString("pt-BR", { month: "long" })} de ${d.getFullYear()}`;
+}
+
 /** Public part of the address, shown to contractors. */
 export function homeArea(a: Address): string {
   return `${a.neighborhood}, ${a.city}`;

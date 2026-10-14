@@ -58,7 +58,9 @@ create or replace view freelancer_cards as
       from applications a
       where a.freelancer_id = f.user_id
         and (a.status = 'concluida' or (a.status = 'cancelada' and a.cancelled_by = 'freelancer'))
-    ) as attendance_rate
+    ) as attendance_rate,
+    -- Novas colunas só no fim: "create or replace view" não aceita mudar a ordem.
+    f.created_at as member_since
   from freelancer_profiles f
   left join applications ap on ap.freelancer_id = f.user_id
   left join reviews r on r.application_id = ap.id and r.author_role = 'contratante'
@@ -70,7 +72,8 @@ create or replace view contractor_cards as
     c.business_name,
     c.logo_url,
     coalesce(round(avg(r.stars)::numeric, 1), 0) as rating,
-    count(r.id) as rating_count
+    count(r.id) as rating_count,
+    c.created_at as member_since
   from contratante_profiles c
   left join jobs j on j.contractor_id = c.user_id
   left join applications a on a.job_id = j.id

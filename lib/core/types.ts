@@ -58,6 +58,8 @@ export interface FreelancerCard {
   rating: number; // 0–5
   ratingCount: number;
   attendanceRate: number | null; // 0–100; null = no finished shifts yet
+  /** When the freelancer profile was created (ISO). */
+  memberSince?: string;
 }
 
 export interface Contractor {
@@ -66,6 +68,8 @@ export interface Contractor {
   logoUrl?: string;
   rating: number;
   ratingCount: number;
+  /** When the contractor profile was created (ISO). */
+  memberSince?: string;
 }
 
 export type JobStatus = "aberta" | "preenchida" | "encerrada" | "cancelada";
