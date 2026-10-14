@@ -41,7 +41,7 @@ function SetupNeeded() {
     <div className="grid min-h-dvh place-items-center bg-navy px-6 text-white">
       <div className="max-w-md">
         <p className="font-display text-2xl font-extrabold tracking-tight">
-          freelas<span className="text-cta">.</span>
+          Freelas<span className="text-cta">.</span>
         </p>
         <h1 className="mt-6 text-2xl font-extrabold">O app ainda não está conectado</h1>
         <p className="mt-2 text-slate-300">

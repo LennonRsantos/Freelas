@@ -69,7 +69,7 @@ export function Splash() {
   return (
     <div className="grid min-h-dvh place-items-center bg-navy">
       <p className="font-display text-2xl font-extrabold tracking-tight text-white">
-        freelas
+        Freelas
         <span className="text-cta">.</span>
       </p>
     </div>

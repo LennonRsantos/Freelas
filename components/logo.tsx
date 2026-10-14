@@ -18,7 +18,7 @@ export function Logo({
         className,
       )}
     >
-      freelas<span className="text-cta">.</span>
+      Freelas<span className="text-cta">.</span>
     </span>
   );
 }
