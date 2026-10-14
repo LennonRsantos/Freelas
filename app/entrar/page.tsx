@@ -97,8 +97,8 @@ export default function EntrarPage() {
   async function verify(e: FormEvent) {
     e.preventDefault();
     if (!auth) return;
-    if (!/^\d{6}$/.test(code)) {
-      setCodeError("Digite os 6 números do código.");
+    if (!/^\d{6,10}$/.test(code)) {
+      setCodeError("Digite todos os números do código.");
       return;
     }
     setBusy(true);
@@ -232,7 +232,7 @@ export default function EntrarPage() {
                 </span>
                 <h2 className="text-2xl font-extrabold">Confira seu e-mail</h2>
                 <p className="mt-1 text-muted">
-                  Enviamos 6 números para <span className="font-medium text-ink">{email}</span>.
+                  Enviamos um código para <span className="font-medium text-ink">{email}</span>.
                   Veja também a caixa de spam.
                 </p>
               </div>
@@ -242,11 +242,11 @@ export default function EntrarPage() {
                     {...a}
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    maxLength={6}
+                    maxLength={10}
                     placeholder="000000"
                     autoFocus
                     value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
                     className="h-14 text-center font-display text-2xl tracking-[0.5em]"
                   />
                 )}
