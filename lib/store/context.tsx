@@ -16,6 +16,11 @@ export interface AuthApi {
   /** Emails a 6-digit sign-in code. */
   sendCode: (email: string) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  /** Emails a link to /entrar/nova-senha. */
+  sendPasswordReset: (email: string) => Promise<void>;
+  /** Sets a new password for the signed-in user. */
+  updatePassword: (password: string) => Promise<void>;
 }
 
 export interface Store {

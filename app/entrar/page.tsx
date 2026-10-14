@@ -1,20 +1,23 @@
 "use client";
 
-import { ArrowLeft, BriefcaseBusiness, ChefHat, Mail } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, ChefHat, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { homeFor } from "@/components/app-shell";
 import { Logo } from "@/components/logo";
+import { PasswordInput } from "@/components/password-input";
 import { ContratanteForm, FreelancerForm } from "@/components/profile-forms";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import type { ViewMode } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
+import { remembersSession, setRememberSession } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type Intent = "login" | "signup";
-type Step = "email" | "code" | "profile";
+type Step = "email" | "code" | "forgot" | "profile";
+type Method = "password" | "code";
 
 const CHOICES: { mode: ViewMode; title: string; text: string; icon: typeof ChefHat }[] = [
   {
@@ -46,6 +49,12 @@ export default function EntrarPage() {
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [method, setMethod] = useState<Method>("password");
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string>();
+  // The checkbox starts from the last choice made on this device.
+  const [remember, setRemember] = useState(remembersSession);
+  const [resetSentTo, setResetSentTo] = useState<string>();
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -62,6 +71,16 @@ export default function EntrarPage() {
     setIntent(next);
     setStep("email");
     setEmailError(undefined);
+    setPasswordError(undefined);
+  }
+
+  function validEmail() {
+    if (/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setEmailError(undefined);
+      return true;
+    }
+    setEmailError("Informe um e-mail válido, como nome@email.com.");
+    return false;
   }
 
   async function sendCode() {
@@ -80,13 +99,11 @@ export default function EntrarPage() {
 
   async function submitEmail(e: FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setEmailError("Informe um e-mail válido, como nome@email.com.");
-      return;
-    }
-    setEmailError(undefined);
+    if (!validEmail()) return;
     dispatch({ type: "set_mode", mode });
     if (remote) {
+      // New accounts stay signed in; on login the checkbox decides.
+      setRememberSession(intent === "signup" || remember);
       await sendCode();
     } else {
       dispatch({ type: "sign_up", email: email.trim(), mode });
@@ -109,6 +126,41 @@ export default function EntrarPage() {
       setStep("profile");
     } catch (err) {
       setCodeError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitPassword(e: FormEvent) {
+    e.preventDefault();
+    if (!auth || !validEmail()) return;
+    if (!password) {
+      setPasswordError("Digite sua senha.");
+      return;
+    }
+    setPasswordError(undefined);
+    setRememberSession(remember);
+    setBusy(true);
+    try {
+      await auth.signInWithPassword(email.trim(), password);
+      // Returning users are sent home by the effect above once their profile loads.
+      setStep("profile");
+    } catch (err) {
+      setPasswordError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendReset(e: FormEvent) {
+    e.preventDefault();
+    if (!auth || !validEmail()) return;
+    setBusy(true);
+    try {
+      await auth.sendPasswordReset(email.trim());
+      setResetSentTo(email.trim());
+    } catch (err) {
+      setEmailError(`Não foi possível enviar o link: ${(err as Error).message}`);
     } finally {
       setBusy(false);
     }
@@ -161,19 +213,84 @@ export default function EntrarPage() {
 
           {step === "email" &&
             (intent === "login" ? (
-              <form onSubmit={submitEmail} noValidate className="flex flex-col gap-5">
+              <form
+                onSubmit={remote && method === "password" ? submitPassword : submitEmail}
+                noValidate
+                className="flex flex-col gap-5"
+              >
                 <div>
                   <h2 className="text-2xl font-extrabold">Bem-vindo de volta</h2>
                   <p className="mt-1 text-muted">
-                    {remote
-                      ? "Digite seu e-mail. Enviamos um código de acesso, sem senha."
-                      : "Digite seu e-mail para entrar na demonstração."}
+                    {!remote
+                      ? "Digite seu e-mail para entrar na demonstração."
+                      : method === "password"
+                        ? "Entre com seu e-mail e senha."
+                        : "Digite seu e-mail. Enviamos um código de acesso, sem senha."}
                   </p>
                 </div>
                 <EmailField value={email} onChange={setEmail} error={emailError} />
+                {remote && method === "password" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Field label="Senha" error={passwordError}>
+                      {(a) => (
+                        <PasswordInput
+                          {...a}
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      )}
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetSentTo(undefined);
+                        setEmailError(undefined);
+                        setStep("forgot");
+                      }}
+                      className="self-end text-sm font-medium text-muted underline-offset-4 hover:text-ink hover:underline"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
+                {remote && (
+                  <label className="flex cursor-pointer items-center gap-2.5 text-[15px] text-ink">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="size-[18px] accent-cta"
+                    />
+                    Lembrar de mim neste aparelho
+                  </label>
+                )}
                 <Button type="submit" variant="cta" size="lg" block disabled={busy}>
-                  {busy ? "Enviando…" : remote ? "Enviar código" : "Entrar"}
+                  {busy
+                    ? method === "password" || !remote
+                      ? "Entrando…"
+                      : "Enviando…"
+                    : remote && method === "code"
+                      ? "Enviar código"
+                      : "Entrar"}
                 </Button>
+                {remote && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setMethod(method === "password" ? "code" : "password");
+                      setPasswordError(undefined);
+                    }}
+                  >
+                    {method === "password" ? (
+                      <Mail className="size-4" aria-hidden />
+                    ) : (
+                      <KeyRound className="size-4" aria-hidden />
+                    )}
+                    {method === "password" ? "Entrar com código por e-mail" : "Entrar com senha"}
+                  </Button>
+                )}
                 <p className="text-center text-sm text-muted">
                   Ainda não tem conta?{" "}
                   <button
@@ -215,6 +332,45 @@ export default function EntrarPage() {
                 )}
               </form>
             ))}
+
+          {step === "forgot" && (
+            <form onSubmit={sendReset} noValidate className="flex flex-col gap-5">
+              <div>
+                <BackButton
+                  label="Voltar para o login"
+                  onClick={() => {
+                    setStep("email");
+                    setEmailError(undefined);
+                  }}
+                />
+                <span className="mb-3 grid size-11 place-items-center rounded-xl bg-subtle text-ink">
+                  <KeyRound className="size-5" aria-hidden />
+                </span>
+                <h2 className="text-2xl font-extrabold">Redefinir senha</h2>
+                <p className="mt-1 text-muted">
+                  {resetSentTo ? (
+                    <>
+                      Enviamos um link para{" "}
+                      <span className="font-medium text-ink">{resetSentTo}</span>. Abra o e-mail
+                      neste aparelho e crie a nova senha. Veja também a caixa de spam.
+                    </>
+                  ) : (
+                    "Digite o e-mail da sua conta. Enviamos um link para criar uma nova senha."
+                  )}
+                </p>
+              </div>
+              <EmailField value={email} onChange={setEmail} error={emailError} />
+              <Button
+                type="submit"
+                variant={resetSentTo ? "ghost" : "cta"}
+                size="lg"
+                block
+                disabled={busy}
+              >
+                {busy ? "Enviando…" : resetSentTo ? "Enviar de novo" : "Enviar link"}
+              </Button>
+            </form>
+          )}
 
           {step === "code" && (
             <form onSubmit={verify} noValidate className="flex flex-col gap-5">

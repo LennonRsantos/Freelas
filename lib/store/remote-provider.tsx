@@ -151,6 +151,32 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         const { error } = await sb.auth.verifyOtp({ email: address, token: code, type: "email" });
         if (error) throw new Error("Código inválido ou expirado. Peça um novo código.");
       },
+      async signInWithPassword(address, password) {
+        const { error } = await sb.auth.signInWithPassword({ email: address, password });
+        if (!error) return;
+        if (error.code === "invalid_credentials") throw new Error("E-mail ou senha incorretos.");
+        if (error.code === "email_not_confirmed") {
+          throw new Error("Confirme seu e-mail antes de entrar com senha.");
+        }
+        throw new Error(error.message);
+      },
+      async sendPasswordReset(address) {
+        const { error } = await sb.auth.resetPasswordForEmail(address, {
+          redirectTo: `${window.location.origin}/entrar/nova-senha`,
+        });
+        if (error) throw new Error(error.message);
+      },
+      async updatePassword(password) {
+        const { error } = await sb.auth.updateUser({ password });
+        if (!error) return;
+        if (error.code === "same_password") {
+          throw new Error("A nova senha precisa ser diferente da atual.");
+        }
+        if (error.code === "weak_password") {
+          throw new Error("Senha fraca. Use pelo menos 8 caracteres, misturando letras e números.");
+        }
+        throw new Error(error.message);
+      },
     }),
     [sb],
   );

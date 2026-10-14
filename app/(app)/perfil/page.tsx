@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Pencil, RotateCcw, Star } from "lucide-react";
+import { KeyRound, LogOut, Pencil, RotateCcw, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -186,6 +186,12 @@ export default function PerfilPage() {
             <RotateCcw className="size-4" aria-hidden />
             Restaurar dados de demonstração
           </Button>
+        )}
+        {backend === "supabase" && (
+          <Link href="/entrar/nova-senha" className={buttonStyles({ variant: "ghost" })}>
+            <KeyRound className="size-4" aria-hidden />
+            Criar ou alterar senha
+          </Link>
         )}
         <Button
           variant="ghost"
