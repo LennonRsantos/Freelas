@@ -158,6 +158,7 @@ export async function fetchSnapshot(
     rating: Number(c.rating),
     ratingCount: Number(c.rating_count),
     memberSince: c.member_since ?? undefined,
+    cancellations: c.cancellations == null ? undefined : Number(c.cancellations),
   }));
 
   const freelancers: FreelancerCard[] = must<Row[]>(freelancerCards).map((f) => ({
@@ -288,6 +289,8 @@ export async function runAction(sb: SupabaseClient, uid: string, action: Action)
       return rpc(sb, "finish_shift", { p_job_id: action.jobId });
     case "cancel_job":
       return rpc(sb, "cancel_job", { p_job_id: action.jobId });
+    case "cancel_hire":
+      return rpc(sb, "cancel_hire", { p_application_id: action.applicationId });
     case "review":
       return rpc(sb, "submit_review", {
         p_application_id: action.applicationId,

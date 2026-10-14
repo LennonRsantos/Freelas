@@ -150,6 +150,7 @@ function Dashboard() {
                             <ApplicantRow
                               key={a.id}
                               app={a}
+                              job={job}
                               freelancer={f}
                               canDecide={filled < job.slots}
                             />

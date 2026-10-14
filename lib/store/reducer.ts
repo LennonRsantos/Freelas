@@ -37,6 +37,7 @@ export type Action =
   | { type: "withdraw"; applicationId: string }
   | { type: "cancel_application"; applicationId: string; now: string }
   | { type: "cancel_job"; jobId: string; now: string }
+  | { type: "cancel_hire"; applicationId: string; now: string }
   | {
       type: "check_in";
       applicationId: string;
@@ -140,14 +141,16 @@ export function reducer(state: State, action: Action): State {
       return { ...state, applications, jobs };
     }
 
-    case "cancel_application": {
-      // The freelancer calls off a confirmed shift; the slot opens again.
+    case "cancel_application":
+    case "cancel_hire": {
+      // A confirmed shift is called off (by the freelancer or the contractor); the slot opens again.
+      const cancelledBy: ViewMode = action.type === "cancel_hire" ? "contratante" : "freelancer";
       const applications = state.applications.map((a) =>
         a.id === action.applicationId
           ? {
               ...a,
               status: "cancelada" as const,
-              cancelledBy: "freelancer" as const,
+              cancelledBy,
               cancelledAt: action.now,
             }
           : a,

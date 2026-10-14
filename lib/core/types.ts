@@ -70,6 +70,8 @@ export interface Contractor {
   ratingCount: number;
   /** When the contractor profile was created (ISO). */
   memberSince?: string;
+  /** Shifts in which the contractor cancelled someone. Shown to freelancers. */
+  cancellations?: number;
 }
 
 export type JobStatus = "aberta" | "preenchida" | "encerrada" | "cancelada";

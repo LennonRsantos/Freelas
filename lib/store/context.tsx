@@ -7,6 +7,7 @@ import type { Action, State } from "./reducer";
 export interface Toast {
   id: number;
   message: string;
+  tone: "ok" | "error";
 }
 
 /** Where the data lives: the device (demo) or Supabase. */
@@ -41,7 +42,7 @@ export interface Store {
   publishJob: (job: Extract<Action, { type: "publish_job" }>["job"]) => string;
   resetDemo: () => void;
   toasts: Toast[];
-  notify: (message: string) => void;
+  notify: (message: string, tone?: Toast["tone"]) => void;
 }
 
 export const StoreContext = createContext<Store | null>(null);
@@ -62,10 +63,12 @@ export function useToasts() {
     return () => pending.forEach(clearTimeout);
   }, []);
 
-  const notify = useCallback((message: string) => {
+  const notify = useCallback((message: string, tone: Toast["tone"] = "ok") => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, message }]);
-    timers.current.push(setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3600));
+    setToasts((t) => [...t, { id, message, tone }]);
+    // Errors stay longer: they usually need reading.
+    const ms = tone === "error" ? 6000 : 3600;
+    timers.current.push(setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms));
   }, []);
 
   return { toasts, notify, timers };

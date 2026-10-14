@@ -81,6 +81,7 @@ export function JobApplicants({ job }: { job: Job }) {
               <ApplicantRow
                 key={app.id}
                 app={app}
+                job={job}
                 freelancer={f}
                 canDecide={canDecide}
                 onRate={() => setRateId(app.id)}

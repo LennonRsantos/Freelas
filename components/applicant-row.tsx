@@ -1,11 +1,22 @@
 "use client";
 
-import { CalendarDays, Check, CheckCircle2, Home, MapPinCheck, X } from "lucide-react";
+import {
+  BellRing,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  Home,
+  MapPinCheck,
+  UserRoundX,
+  X,
+} from "lucide-react";
+import { useState } from "react";
 import { FEATURES } from "@/lib/core/features";
-import { memberSince } from "@/lib/core/logic";
-import type { Application, FreelancerCard } from "@/lib/core/types";
+import { memberSince, toISODate } from "@/lib/core/logic";
+import type { Application, FreelancerCard, Job } from "@/lib/core/types";
 import { useFreelas } from "@/lib/store/freelas-store";
 import { cn } from "@/lib/utils";
+import { CancelDialog } from "./cancel-dialog";
 import { ApplicationBadge, Badge } from "./ui/badge";
 import { Avatar } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -13,15 +24,22 @@ import { StarRating } from "./ui/stars";
 
 interface ApplicantRowProps {
   app: Application;
+  job: Job;
   freelancer: FreelancerCard;
   /** When false, approve/reject is hidden (job full or closed). */
   canDecide: boolean;
   onRate?: () => void;
 }
 
-export function ApplicantRow({ app, freelancer, canDecide, onRate }: ApplicantRowProps) {
-  const { dispatch, notify } = useFreelas();
+export function ApplicantRow({ app, job, freelancer, canDecide, onRate }: ApplicantRowProps) {
+  const { dispatch, notify, today } = useFreelas();
+  const [cancelling, setCancelling] = useState(false);
   const first = freelancer.name.split(" ")[0];
+  // A confirmed hire can be called off until the shift day.
+  const canCancel =
+    app.status === "confirmada" &&
+    (job.status === "aberta" || job.status === "preenchida") &&
+    job.date >= toISODate(today);
 
   function decide(decision: "confirmada" | "recusada") {
     dispatch({ type: "decide", applicationId: app.id, decision });
@@ -108,9 +126,39 @@ export function ApplicantRow({ app, freelancer, canDecide, onRate }: ApplicantRo
               </Badge>
             )}
             <ApplicationBadge status={app.status} />
+            {canCancel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-danger"
+                onClick={() => setCancelling(true)}
+              >
+                Cancelar contratação
+              </Button>
+            )}
           </>
         )}
       </div>
+
+      {canCancel && (
+        <CancelDialog
+          open={cancelling}
+          onOpenChange={setCancelling}
+          title="Cancelar contratação?"
+          job={job}
+          who={freelancer.name}
+          consequences={[
+            { icon: BellRing, text: `${first} é avisado(a) que não trabalha mais neste turno.` },
+            { icon: UserRoundX, text: "A vaga volta a receber candidatos." },
+          ]}
+          reputation="O número de turnos que você cancelou aparece para os freelancers nos detalhes das suas vagas. Muitos cancelamentos afastam bons profissionais."
+          confirmLabel="Cancelar contratação"
+          onConfirm={() => {
+            dispatch({ type: "cancel_hire", applicationId: app.id, now: new Date().toISOString() });
+            notify(`Contratação de ${first} cancelada`);
+          }}
+        />
+      )}
     </li>
   );
 }

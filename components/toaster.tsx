@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFreelas } from "@/lib/store/freelas-store";
 
 export function Toaster() {
@@ -13,10 +13,14 @@ export function Toaster() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          role="status"
+          role={t.tone === "error" ? "alert" : "status"}
           className="animate-toast-in pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-xl bg-navy px-4 py-3 text-sm font-medium text-white shadow-lg"
         >
-          <CheckCircle2 className="size-5 shrink-0 text-ok" aria-hidden />
+          {t.tone === "error" ? (
+            <AlertCircle className="size-5 shrink-0 text-danger" aria-hidden />
+          ) : (
+            <CheckCircle2 className="size-5 shrink-0 text-ok" aria-hidden />
+          )}
           {t.message}
         </div>
       ))}

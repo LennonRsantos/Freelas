@@ -73,7 +73,9 @@ create or replace view contractor_cards as
     c.logo_url,
     coalesce(round(avg(r.stars)::numeric, 1), 0) as rating,
     count(r.id) as rating_count,
-    c.created_at as member_since
+    c.created_at as member_since,
+    -- Turnos em que o contratante cancelou alguém (vaga inteira ou uma contratação).
+    count(distinct a.job_id) filter (where a.cancelled_by = 'contratante') as cancellations
   from contratante_profiles c
   left join jobs j on j.contractor_id = c.user_id
   left join applications a on a.job_id = j.id
@@ -100,7 +102,9 @@ begin
   if v_job.status in ('encerrada', 'cancelada') then return; end if;
   select count(*) into v_filled from applications
     where job_id = p_job_id and status in ('confirmada', 'concluida');
-  update jobs set status = case when v_filled >= v_job.slots then 'preenchida' else 'aberta' end
+  -- O case devolve texto; sem o cast o Postgres recusa gravar no enum (erro 42804).
+  update jobs
+    set status = (case when v_filled >= v_job.slots then 'preenchida' else 'aberta' end)::job_status
     where id = p_job_id;
 end $$;
 
@@ -223,6 +227,26 @@ begin
   update jobs set status = 'encerrada' where id = p_job_id;
 end $$;
 
+-- O contratante desfaz uma contratação aprovada; a vaga volta a receber candidatos.
+create or replace function cancel_hire(p_application_id uuid) returns void
+  language plpgsql security definer set search_path = public as $$
+declare
+  v_app applications%rowtype;
+  v_job jobs%rowtype;
+begin
+  select * into v_app from applications where id = p_application_id;
+  if not found or not owns_job(v_app.job_id) then raise exception 'Contratação não encontrada.'; end if;
+  if v_app.status <> 'confirmada' then raise exception 'Só dá para cancelar contratações confirmadas.'; end if;
+  select * into v_job from jobs where id = v_app.job_id;
+  if v_job.status not in ('aberta', 'preenchida') or v_job.date < local_today() then
+    raise exception 'Este turno já aconteceu ou foi encerrado.';
+  end if;
+  update applications
+    set status = 'cancelada', cancelled_by = 'contratante', cancelled_at = now()
+    where id = p_application_id;
+  perform refresh_job_status(v_job.id);
+end $$;
+
 create or replace function cancel_job(p_job_id uuid) returns void
   language plpgsql security definer set search_path = public as $$
 begin
@@ -275,6 +299,7 @@ grant execute on function
   decide_application(uuid, application_status),
   finish_shift(uuid),
   cancel_job(uuid),
+  cancel_hire(uuid),
   submit_review(uuid, view_mode, int, text[], text)
   to authenticated;
 

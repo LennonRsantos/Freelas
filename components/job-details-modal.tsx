@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarDays, MapPin, Shirt, StickyNote } from "lucide-react";
+import { Building2, CalendarDays, CalendarX, MapPin, Shirt, StickyNote } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   formatAddress,
@@ -35,7 +35,9 @@ export function JobDetailsModal({
     {
       icon: CalendarDays,
       label: "Quando",
-      value: `${date}, das ${job.start} às ${job.end} (${formatHours(shiftHours(job.start, job.end))})`,
+      value: `${date}, das ${job.start} às ${job.end} (${formatHours(
+        shiftHours(job.start, job.end),
+      )})`,
     },
     { icon: MapPin, label: "Onde", value: formatAddress(job) },
     { icon: Shirt, label: "Traje", value: job.dressCode },
@@ -46,6 +48,18 @@ export function JobDetailsModal({
             icon: Building2,
             label: "Contratante",
             value: `${contractor.name}. ${memberSince(contractor.memberSince)}.`,
+          },
+        ]
+      : []),
+    ...(contractor.cancellations
+      ? [
+          {
+            icon: CalendarX,
+            label: "Cancelamentos",
+            value:
+              contractor.cancellations === 1
+                ? "Este contratante já cancelou 1 turno."
+                : `Este contratante já cancelou ${contractor.cancellations} turnos.`,
           },
         ]
       : []),

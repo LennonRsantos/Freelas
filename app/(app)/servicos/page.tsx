@@ -1,8 +1,18 @@
 "use client";
 
-import { Ban, CalendarClock, CheckCircle2, ClipboardList, Star } from "lucide-react";
+import {
+  Ban,
+  BellRing,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardList,
+  EyeOff,
+  Star,
+  UserRoundX,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { CancelDialog, type Consequence } from "@/components/cancel-dialog";
 import { CheckInPanel } from "@/components/check-in-panel";
 import { JobTicket } from "@/components/job-ticket";
 import { PageHeader } from "@/components/page-header";
@@ -10,10 +20,9 @@ import { RatingModal } from "@/components/rating-modal";
 import { ApplicationBadge, Badge, JobStatusBadge } from "@/components/ui/badge";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StarRow } from "@/components/ui/stars";
-import { averageStars, canCheckIn, parseISODate, toISODate } from "@/lib/core/logic";
+import { averageStars, canCheckIn, toISODate } from "@/lib/core/logic";
 import { FEATURES } from "@/lib/core/features";
 import { ME } from "@/lib/core/ids";
 import type { Application, Job, Review } from "@/lib/core/types";
@@ -142,7 +151,9 @@ function List({ side, bucket, children }: { side: Side; bucket: Bucket; children
     return (
       <EmptyState
         icon={icon}
-        title={`Nenhum serviço ${bucket === "proximos" ? "próximo" : bucket === "finalizados" ? "finalizado" : "cancelado"}`}
+        title={`Nenhum serviço ${
+          bucket === "proximos" ? "próximo" : bucket === "finalizados" ? "finalizado" : "cancelado"
+        }`}
         action={
           bucket === "proximos" ? (
             <Link
@@ -166,7 +177,7 @@ function List({ side, bucket, children }: { side: Side; bucket: Bucket; children
 function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucket) => void }) {
   const { state, dispatch, today, contractorOf, notify } = useFreelas();
   const [rating, setRating] = useState<{ app: Application; job: Job } | null>(null);
-  const [cancelling, setCancelling] = useState<Application | null>(null);
+  const [cancelling, setCancelling] = useState<{ app: Application; job: Job } | null>(null);
 
   if (!state.user?.freelancer) {
     return (
@@ -240,7 +251,7 @@ function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucke
             variant="ghost"
             size="sm"
             className="text-danger"
-            onClick={() => setCancelling(app)}
+            onClick={() => setCancelling({ app, job })}
           >
             Cancelar participação
           </Button>
@@ -308,27 +319,60 @@ function Prestados({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucke
           subtitle={`${rating.job.role}, ${rating.job.neighborhood}`}
         />
       )}
-      <ConfirmDialog
-        open={Boolean(cancelling)}
-        onOpenChange={(o) => !o && setCancelling(null)}
-        title="Cancelar participação?"
-        description="O contratante é avisado e a vaga volta a receber candidatos. Cancelamentos reduzem sua taxa de presença."
-        confirmLabel="Cancelar participação"
-        onConfirm={() => {
-          if (!cancelling) return;
-          dispatch({
-            type: "cancel_application",
-            applicationId: cancelling.id,
-            now: new Date().toISOString(),
-          });
-          notify("Participação cancelada");
-        }}
-      />
+      {cancelling && (
+        <CancelDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          title="Cancelar participação?"
+          job={cancelling.job}
+          who={contractorOf(cancelling.job).name}
+          consequences={[
+            { icon: BellRing, text: "O contratante é avisado na hora." },
+            { icon: UserRoundX, text: "Sua vaga no turno é liberada para outra pessoa." },
+          ]}
+          reputation="Cancelamentos baixam sua taxa de presença, que os contratantes veem antes de aprovar você. Com presença baixa, fica mais difícil ser escolhido nas próximas vagas."
+          confirmLabel="Cancelar participação"
+          onConfirm={() => {
+            dispatch({
+              type: "cancel_application",
+              applicationId: cancelling.app.id,
+              now: new Date().toISOString(),
+            });
+            notify("Participação cancelada");
+          }}
+        />
+      )}
     </>
   );
 }
 
 /* ---------- Vagas que a empresa do usuário ofereceu ---------- */
+
+/** What cancelling a whole job does to the people already on it. */
+function cancelConsequences(apps: Application[]): Consequence[] {
+  const confirmed = apps.filter((a) => a.status === "confirmada").length;
+  const pending = apps.filter((a) => a.status === "em_analise").length;
+  const list: Consequence[] = [{ icon: EyeOff, text: "A vaga sai do ar na hora." }];
+  if (confirmed > 0) {
+    list.push({
+      icon: UserRoundX,
+      text:
+        confirmed === 1
+          ? "1 profissional confirmado perde o turno e é avisado."
+          : `${confirmed} profissionais confirmados perdem o turno e são avisados.`,
+    });
+  }
+  if (pending > 0) {
+    list.push({
+      icon: BellRing,
+      text:
+        pending === 1
+          ? "1 candidatura em análise é encerrada."
+          : `${pending} candidaturas em análise são encerradas.`,
+    });
+  }
+  return list;
+}
 
 function Oferecidos({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Bucket) => void }) {
   const { state, dispatch, today, contractorOf, notify } = useFreelas();
@@ -380,7 +424,9 @@ function Oferecidos({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Buck
         <p className="text-sm text-muted">
           Cancelada por você.{" "}
           {affected > 0 &&
-            `${affected} ${affected === 1 ? "profissional foi avisado" : "profissionais foram avisados"}.`}
+            `${affected} ${
+              affected === 1 ? "profissional foi avisado" : "profissionais foram avisados"
+            }.`}
         </p>
       );
     }
@@ -442,22 +488,21 @@ function Oferecidos({ bucket, setBucket }: { bucket: Bucket; setBucket: (b: Buck
         ))}
       </List>
 
-      <ConfirmDialog
-        open={Boolean(cancelling)}
-        onOpenChange={(o) => !o && setCancelling(null)}
-        title="Cancelar vaga?"
-        description={
-          cancelling
-            ? `A vaga de ${cancelling.role} do dia ${parseISODate(cancelling.date).toLocaleDateString("pt-BR")} sai do ar e os candidatos são avisados.`
-            : ""
-        }
-        confirmLabel="Cancelar vaga"
-        onConfirm={() => {
-          if (!cancelling) return;
-          dispatch({ type: "cancel_job", jobId: cancelling.id, now: new Date().toISOString() });
-          notify("Vaga cancelada");
-        }}
-      />
+      {cancelling && (
+        <CancelDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          title="Cancelar vaga?"
+          job={cancelling}
+          consequences={cancelConsequences(appsOf(cancelling))}
+          reputation="O número de turnos que você cancelou aparece para os freelancers nos detalhes das suas vagas. Muitos cancelamentos afastam bons profissionais."
+          confirmLabel="Cancelar vaga"
+          onConfirm={() => {
+            dispatch({ type: "cancel_job", jobId: cancelling.id, now: new Date().toISOString() });
+            notify("Vaga cancelada");
+          }}
+        />
+      )}
     </>
   );
 }

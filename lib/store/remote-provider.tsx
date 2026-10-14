@@ -86,7 +86,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       const snap = await fetchSnapshot(sb, uid, email, today);
       dispatchLocal({ type: "__replace", state: { ...snap, mode: modeRef.current } });
     } catch (e) {
-      notify(`Não foi possível carregar os dados: ${(e as Error).message}`);
+      notify(`Não foi possível carregar os dados: ${(e as Error).message}`, "error");
     } finally {
       setFirstLoadDone(true);
     }
@@ -131,11 +131,11 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       runAction(sb, uid, action)
         .then(() => (action.type === "sign_out" ? undefined : refresh()))
         .catch((e: Error) => {
-          notify(e.message);
+          notify(e.message, "error");
           void refresh();
         });
     },
-    [sb, uid, refresh, notify, state.mode]
+    [sb, uid, refresh, notify, state.mode],
   );
 
   const auth = useMemo<Store["auth"]>(
@@ -149,7 +149,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         // With e-mail confirmation on, Supabase hides taken addresses behind an empty identities list.
         if (error?.code === "user_already_exists" || data.user?.identities?.length === 0) {
           throw new Error(
-            "Este e-mail já tem conta. Entre com sua senha ou use “Esqueci minha senha”."
+            "Este e-mail já tem conta. Entre com sua senha ou use “Esqueci minha senha”.",
           );
         }
         if (error?.code === "weak_password") {
@@ -197,7 +197,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message);
       },
     }),
-    [sb]
+    [sb],
   );
 
   const contractorOf = useCallback(
@@ -211,16 +211,17 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
           rating: card?.rating ?? 0,
           ratingCount: card?.ratingCount ?? 0,
           memberSince: card?.memberSince,
+          cancellations: card?.cancellations,
         };
       }
       return card ?? { id: job.contractorId, name: "Contratante", rating: 0, ratingCount: 0 };
     },
-    [state.directory, state.user]
+    [state.directory, state.user],
   );
 
   const freelancerOf = useCallback(
     (id: string) => state.directory?.freelancers.find((f) => f.id === id),
-    [state.directory]
+    [state.directory],
   );
 
   const publishJob = useCallback<Store["publishJob"]>(
@@ -229,7 +230,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "publish_job", job, id, now: new Date().toISOString() });
       return id;
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Signed out: nothing from a previous account stays on screen.
@@ -249,7 +250,7 @@ export function RemoteProvider({ children }: { children: ReactNode }) {
       toasts,
       notify,
     }),
-    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify]
+    [shown, dispatch, today, auth, contractorOf, freelancerOf, publishJob, toasts, notify],
   );
 
   if (session === undefined || (uid && !firstLoadDone && !sawSignedOut)) return <Splash />;
