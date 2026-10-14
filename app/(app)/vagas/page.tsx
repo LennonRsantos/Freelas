@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchX } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { JobDetailsModal } from "@/components/job-details-modal";
 import { JobTicket } from "@/components/job-ticket";
@@ -8,8 +9,8 @@ import { PageHeader } from "@/components/page-header";
 import { RegionFilter, describeRegion } from "@/components/region-filter";
 import { RoleFilter } from "@/components/role-picker";
 import { RequireProfile } from "@/components/require-profile";
-import { ApplicationBadge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ApplicationBadge, Badge } from "@/components/ui/badge";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Select } from "@/components/ui/field";
 import {
@@ -53,16 +54,9 @@ function Feed() {
   const { state, dispatch, today, contractorOf, notify } = useFreelas();
   const [details, setDetails] = useState<Job | null>(null);
 
-  // The feed shows other contractors' open jobs only.
-  const open = useMemo(
-    () =>
-      filterJobs(
-        state.jobs.filter((j) => j.contractorId !== ME),
-        DEFAULT_FILTERS,
-        today,
-      ),
-    [state.jobs, today],
-  );
+  // Open jobs, the user's own included (shown, but not open to their application).
+  const open = useMemo(() => filterJobs(state.jobs, DEFAULT_FILTERS, today), [state.jobs, today]);
+  const isMine = (job: Job) => job.contractorId === ME;
   const regions = useMemo(() => listRegions(open), [open]);
 
   // Start in the freelancer's own city when it has open jobs.
@@ -95,6 +89,19 @@ function Feed() {
   const set = (patch: Partial<JobFilters>) => setFilters((f) => ({ ...f, ...patch }));
 
   function actionFor(job: Job) {
+    if (isMine(job)) {
+      return (
+        <>
+          <Badge tone="navy">Sua vaga</Badge>
+          <Link
+            href={`/contratar/vagas/${job.id}`}
+            className={buttonStyles({ variant: "outline", size: "sm" })}
+          >
+            Gerenciar
+          </Link>
+        </>
+      );
+    }
     const app = myApp(job.id);
     if (app) return <ApplicationBadge status={app.status} />;
     return (
@@ -274,7 +281,19 @@ function Feed() {
           open
           onOpenChange={(o) => !o && setDetails(null)}
           footer={
-            myApp(details.id) ? (
+            isMine(details) ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-center text-sm text-muted">
+                  Esta vaga é sua. Você não pode se candidatar a ela.
+                </p>
+                <Link
+                  href={`/contratar/vagas/${details.id}`}
+                  className={buttonStyles({ variant: "primary", size: "lg", block: true })}
+                >
+                  Ver candidatos
+                </Link>
+              </div>
+            ) : myApp(details.id) ? (
               <p className="text-center text-sm text-muted">Você já se candidatou a este turno.</p>
             ) : (
               <Button
